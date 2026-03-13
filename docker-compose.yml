@@ -1,0 +1,40 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    environment:
+      JBNU_APP_NAME: JBNU Scholarship Regulation Search & Eligibility Decision System
+      JBNU_ENV: local
+      JBNU_LOG_LEVEL: INFO
+      JBNU_API_PREFIX: /api/v1
+      JBNU_DATABASE_URL: postgresql+psycopg://jbnu:jbnu@postgres:5432/jbnu_scholarship
+      JBNU_RAW_STORAGE_PATH: /app/data/raw
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: jbnu_scholarship
+      POSTGRES_USER: jbnu
+      POSTGRES_PASSWORD: jbnu
+    ports:
+      - "54329:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres-data:
