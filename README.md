@@ -1,61 +1,213 @@
 # JBNU Scholarship Regulation Search & Eligibility Decision System
 
-전북대학교 장학 관련 공지를 수집하고, 원문을 보존형으로 정규화한 뒤, 코드 기반 규칙 엔진으로 지원 가능 여부를 판정하는 시스템이다.
+전북대학교 장학 공지를 자동 수집하고, 원문을 보존형으로 정규화한 뒤, 구조화 규정과 deterministic engine으로 검색과 지원 가능 여부를 제공하는 시스템이다.
+
+## Why This Project Exists
+전북대학교 장학 공지는 게시판, HTML 본문, PDF/HWP 첨부로 분산되어 있고 기준도 비정형 문장으로 흩어져 있다. 학생은 여러 공고를 직접 읽으면서 학점, 학년, 학적, 소득분위를 대조해야 하고, 기준이 모호하면 판단이 어렵다.
+
+이 프로젝트는 그 문제를 아래 방식으로 바꾼다.
+- 공식 공지를 자동 수집한다.
+- 원문 HTML과 attachment를 그대로 보존한다.
+- 검색 가능한 canonical document와 판정 가능한 structured rule을 분리 저장한다.
+- provenance가 포함된 근거 기반 검색 결과를 제공한다.
+- 최종 eligibility는 코드 기반 엔진이 `eligible`, `ineligible`, `expired`, `insufficient_info`로 판정한다.
 
 ## What This Project Does
 - 전북대학교 공식 게시판 공지를 수집한다.
-- HTML 본문과 PDF 첨부를 원문 그대로 저장한다.
-- 문서를 canonical block 구조로 정규화한다.
-- 장학 규정을 구조화 JSON으로 추출한다.
-- 검색과 deterministic eligibility 판정을 통해 근거 기반 응답을 제공한다.
+- HTML 본문과 PDF/HWP attachment를 raw 파일로 저장한다.
+- notice/attachment를 canonical block 구조로 정규화한다.
+- 장학명, 평점, 소득분위, 학년, 학적, 제출서류를 structured rule JSON으로 추출한다.
+- search API와 open scholarship API를 제공한다.
+- student profile 기반 eligibility API와 explanation 응답을 제공한다.
 
 ## Why This Is Not a Simple Chatbot
-- 단순 문서 chunk 검색이 아니라 `문서 인덱스 + 규정 테이블 + 판정 엔진` 구조를 사용한다.
-- LLM은 규정 추출과 설명 문장 정리에만 관여한다.
-- 최종 지원 가능 여부는 코드 기반 엔진이 `eligible`, `ineligible`, `expired`, `insufficient_info`로 판정한다.
-- provenance가 없는 값은 신뢰하지 않는다.
+- 단순 문서 chunk 검색이 아니라 `원문 저장 + 구조화 규정 + 판정 엔진` 구조를 사용한다.
+- raw document, canonical document, structured rule, provenance를 분리 저장한다.
+- 최종 지원 가능 여부는 LLM이 아니라 deterministic code가 판정한다.
+- explanation도 provenance와 condition diagnostics를 기준으로 만든다.
 
-## Target Users
-- 장학금 지원 가능 여부를 빠르게 확인하려는 전북대학교 학생
-- 장학 공고와 기준을 추적 가능한 구조로 관리하려는 학과/행정 담당자
-- 공고 수집, 구조화, 판정 파이프라인을 재현 가능한 형태로 검증하려는 개발자
-
-## Current Scope
-- Phase 1.0: 요구사항 분석과 문서 구조 확정
-- Phase 1.1: FastAPI, SQLAlchemy, Alembic, pytest 기반 골격 구성
-- Phase 1.2: Docker Compose 기반 로컬 실행 환경과 PostgreSQL + pgvector 연결 준비
-- Phase 2.0: notice, attachment, canonical document, rule 도메인 모델과 데이터 계약 구성
-- Phase 2.1: repository, initial migration, DB 저장/조회 통합 테스트 추가
-- Phase 3.0: 본부/K2Web 게시판 source 설정과 list/detail parser 추가
-- Phase 3.1: default source collector service와 notice 적재 integration test 추가
-- Phase 4.0: local raw storage와 raw HTML/attachment 저장 추가
-- Phase 4.1: raw HTML notice normalization과 canonical document 적재 추가
-- Phase 4.2: attachment PDF/HWP normalization과 canonical attachment document 적재 추가
-- Phase 5.0: heuristic scholarship rule extraction과 provenance 후보 생성 추가
-- Phase 5.1: scholarship rule/provenance persistence service 추가
-- Phase 6.0: scholarship search read model과 open scholarship query service 추가
-- Phase 6.1: `/api/v1/scholarships/search`, `/api/v1/scholarships/open` API 추가
-- Phase 7.0: deterministic eligibility engine과 explanation builder 추가
-- Phase 7.1: `POST /api/v1/scholarships/eligibility` API 추가
-
-## Quick Start
-```bash
-cp .env.example .env
-docker compose up --build
+## High-Level Architecture
+```text
+[JBNU Boards]
+    |
+    v
+[Collectors / Parsers]
+    |
+    v
+[Raw Storage]
+  - notice HTML
+  - attachment bytes
+    |
+    v
+[Normalizers]
+  -> canonical documents
+    |
+    v
+[Rule Extractor]
+  -> scholarship rules
+  -> provenance anchors
+    |
+    v
+[Search Read Model]
+  -> search API
+  -> open scholarship API
+    |
+    v
+[Eligibility Engine]
+  -> eligibility API
 ```
 
-기본 API:
+아키텍처 상세 문서는 [docs/system-architecture.md](docs/system-architecture.md)에 정리되어 있다.
+
+## How It Works
+### 1. Collection
+- JBNU 본부/K2Web 게시판에서 장학 관련 공지를 찾는다.
+- notice metadata와 attachment metadata를 DB에 저장한다.
+
+### 2. Raw Preservation
+- notice 상세 HTML을 raw 파일로 보관한다.
+- attachment 원본 bytes를 파일로 보관한다.
+
+### 3. Normalization
+- raw HTML을 canonical block 구조로 변환한다.
+- PDF/HWP/text attachment를 canonical document로 변환한다.
+
+### 4. Rule Extraction
+- canonical document에서 장학 조건을 heuristic rule로 추출한다.
+- 추출된 값마다 provenance anchor를 만든다.
+
+### 5. Search
+- published rule을 notice/provenance와 함께 읽어 search read model을 만든다.
+- lexical scoring으로 검색 결과를 정렬한다.
+- 현재 신청 가능한 공고 목록을 계산한다.
+
+### 6. Eligibility
+- student profile과 structured qualification JSON을 직접 비교한다.
+- decision과 explanation, condition diagnostics를 함께 반환한다.
+
+## Runtime Shape
+- Application style: Python monolith + FastAPI
+- API layer: FastAPI routers
+- Domain / orchestration layer: services
+- Persistence layer: SQLAlchemy repositories + Alembic migrations
+- Raw storage layer: local filesystem adapter
+- Data store:
+  - PostgreSQL 16 + pgvector가 기본 운영 스택
+  - SQLite는 테스트와 로컬 단순 검증에 사용
+
+## Core Components
+- Collectors: `app/collectors/`
+- Storage: `app/storage/`
+- Normalizers: `app/normalizers/`
+- Extractors: `app/extractors/`
+- Services: `app/services/`
+- API routers: `app/api/routers/`
+- ORM models: `app/models/`
+- Repositories: `app/repositories/`
+- Schemas: `app/schemas/`
+
+## Tech Stack
+### Core / API
+- Python 3.12
+- FastAPI
+- Pydantic v2
+- SQLAlchemy 2.x
+- Alembic
+
+### Collection / Parsing
+- requests / httpx
+- BeautifulSoup4
+- pypdf
+- olefile
+
+### Storage / Search
+- PostgreSQL 16
+- pgvector
+- local filesystem raw storage
+
+### Testing / Tooling
+- pytest
+- Docker Compose
+- Uvicorn
+
+기술 스택 상세 선택 이유는 [docs/tech-stack.md](docs/tech-stack.md)에 정리되어 있다.
+
+## API Overview
 - `GET /health`
 - `GET /ready`
 - `GET /api/v1/scholarships/search?query=장학금`
 - `GET /api/v1/scholarships/open`
 - `POST /api/v1/scholarships/eligibility`
 
+## Quick Start
+### Docker Compose
+```bash
+cp .env.example .env
+docker compose up --build
+```
+
+실행 후:
+- API base: `http://localhost:8000`
+- Swagger UI: `http://localhost:8000/docs`
+- PostgreSQL: `localhost:54329`
+
+### Local Development
+```bash
+python3 -m pip install -e '.[dev]'
+cp .env.example .env
+uvicorn app.main:app --reload
+```
+
+### Run Tests
+```bash
+pytest
+```
+
+## Configuration
+기본 환경 변수는 [.env.example](.env.example)에 있다.
+
+- `JBNU_APP_NAME`
+- `JBNU_ENV`
+- `JBNU_LOG_LEVEL`
+- `JBNU_API_PREFIX`
+- `JBNU_DATABASE_URL`
+- `JBNU_RAW_STORAGE_PATH`
+
+## Current Implementation Status
+- Phase 1.x: 요구사항, 앱 골격, Docker Compose, PostgreSQL + pgvector 준비
+- Phase 2.x: domain model, migration, repository
+- Phase 3.x: collector
+- Phase 4.x: raw storage, HTML/PDF/HWP normalization
+- Phase 5.x: structured rule extraction, provenance persistence
+- Phase 6.x: search/open scholarship APIs
+- Phase 7.x: eligibility engine, explanation builder, eligibility API
+
+진행 이력은 [docs/implementation-plan.md](docs/implementation-plan.md)과 각 `docs/phase-n.x.md` 문서에 남겨두었다.
+
+## Strengths
+- 수집부터 판정 API까지 end-to-end 흐름이 구현되어 있다.
+- HTML/PDF/HWP를 같은 canonical document 계층으로 수렴시켰다.
+- search와 eligibility가 같은 structured rule 계층을 재사용한다.
+- provenance anchor를 통해 결과 근거를 추적할 수 있다.
+
+## Current Limits
+- search는 아직 semantic embedding 없이 lexical scoring 중심이다.
+- rule extractor는 heuristic 기반이라 복수 규정 공지와 예외 조항 표현력이 제한적이다.
+- eligibility qualification schema는 현재 핵심 필드 중심이다.
+
 ## Repository Layout
 ```text
-app/       FastAPI app and core modules
-alembic/   migration skeleton
+app/       FastAPI app and domain modules
+alembic/   migration definitions
 docs/      requirements, architecture, phase logs, portfolio notes
 docker/    Dockerfile and PostgreSQL init scripts
 tests/     unit and integration tests
+gs/        job/application reference materials kept outside product scope
 ```
+
+## Documentation Map
+- Overview: [docs/project-overview.md](docs/project-overview.md)
+- Requirements: [docs/requirements-analysis.md](docs/requirements-analysis.md)
+- System architecture: [docs/system-architecture.md](docs/system-architecture.md)
+- Tech stack: [docs/tech-stack.md](docs/tech-stack.md)
+- Phase logs: [docs/phase-1.0.md](docs/phase-1.0.md) ~ [docs/phase-7.1.md](docs/phase-7.1.md)
