@@ -8,6 +8,13 @@ from app.schemas.domain import (
     ScholarshipNoticeUpsert,
     ScholarshipRuleCreate,
 )
+from app.schemas.eligibility import (
+    EligibilityCheckRequest,
+    EligibilityConditionCheck,
+    ScholarshipEligibilityItem,
+    ScholarshipEligibilityResponse,
+    StudentProfile,
+)
 from app.schemas.search import (
     OpenScholarshipListResponse,
     ScholarshipProvenanceAnchorResponse,
@@ -18,12 +25,17 @@ from app.schemas.search import (
 __all__ = [
     "CanonicalBlock",
     "CanonicalDocumentUpsert",
+    "EligibilityCheckRequest",
+    "EligibilityConditionCheck",
     "NoticeAttachmentUpsert",
     "OpenScholarshipListResponse",
     "ProvenanceAnchorCreate",
+    "ScholarshipEligibilityItem",
+    "ScholarshipEligibilityResponse",
     "ScholarshipProvenanceAnchorResponse",
     "ScholarshipNoticeUpsert",
     "ScholarshipRuleCreate",
     "ScholarshipSearchItem",
     "ScholarshipSearchResponse",
+    "StudentProfile",
 ]

@@ -21,6 +21,24 @@ TOKEN_PATTERN = re.compile(r"[0-9A-Za-z가-힣]+")
 class ScholarshipSearchService:
     """Assemble scholarship search and open-list responses from stored rules."""
 
+    def list_published_scholarships(
+        self,
+        *,
+        limit: Optional[int] = None,
+        reference_time: Optional[datetime] = None,
+    ) -> List[ScholarshipSearchItem]:
+        """Return published scholarship read models without applying a search query."""
+
+        reference_time = reference_time or now_in_seoul()
+        with session_scope() as session:
+            rules = ScholarshipRuleRepository(session).list_published_rules()
+            items = [self._build_item(rule, reference_time) for rule in rules]
+
+        items = sorted(items, key=self._published_sort_key)
+        if limit is not None:
+            items = items[:limit]
+        return items
+
     def search(
         self,
         query: str,
@@ -58,15 +76,11 @@ class ScholarshipSearchService:
         """Return rules whose application window is currently open."""
 
         reference_time = reference_time or now_in_seoul()
-        with session_scope() as session:
-            rules = ScholarshipRuleRepository(session).list_published_rules()
-            items = [
-                item
-                for rule in rules
-                for item in [self._build_item(rule, reference_time)]
-                if item.application_status == "open"
-            ]
-
+        items = [
+            item
+            for item in self.list_published_scholarships(reference_time=reference_time)
+            if item.application_status == "open"
+        ]
         items = sorted(items, key=self._open_list_sort_key)[:limit]
         return OpenScholarshipListResponse(
             reference_time=reference_time,
@@ -314,3 +328,11 @@ class ScholarshipSearchService:
             "unknown": 2,
             "closed": 3,
         }.get(status, 99)
+
+    def _published_sort_key(self, item: ScholarshipSearchItem) -> Tuple[int, float]:
+        """Prefer actionable notices first while keeping recently published rules near the top."""
+
+        return (
+            self._application_status_rank(item.application_status),
+            -item.published_at.timestamp(),
+        )
