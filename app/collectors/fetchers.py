@@ -15,11 +15,23 @@ class HttpTextFetcher:
         )
 
     def fetch(self, url: str) -> str:
-        """Return the response body for one notice list or detail URL."""
+        """Preserve the phase 3 text fetch interface for existing callers."""
+
+        return self.fetch_text(url)
+
+    def fetch_text(self, url: str) -> str:
+        """Return decoded HTML text for one notice list or detail URL."""
 
         response = self._client.get(url)
         response.raise_for_status()
         return response.text
+
+    def fetch_bytes(self, url: str) -> bytes:
+        """Return raw bytes for attachment download or raw archival flows."""
+
+        response = self._client.get(url)
+        response.raise_for_status()
+        return response.content
 
     def close(self) -> None:
         """Release the underlying HTTP client when the service owns it."""

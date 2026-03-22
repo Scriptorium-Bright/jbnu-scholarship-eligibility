@@ -13,6 +13,7 @@ from app.collectors.types import CollectedNoticeSummary, CollectionRunResult, Co
 from app.db import session_scope
 from app.repositories import ScholarshipNoticeRepository
 from app.schemas import NoticeAttachmentUpsert, ScholarshipNoticeUpsert
+from app.storage import LocalRawStorage
 
 
 class NoticeCollectionService:
@@ -21,11 +22,17 @@ class NoticeCollectionService:
     def __init__(
         self,
         fetch_html: Optional[Callable[[str], str]] = None,
+        fetch_binary: Optional[Callable[[str], bytes]] = None,
+        raw_storage: Optional[LocalRawStorage] = None,
     ):
-        """Prepare the collector with injected HTML fetching for tests or runtime."""
+        """Prepare fetchers plus optional raw storage for archival runs."""
 
         self._owned_fetcher = HttpTextFetcher() if fetch_html is None else None
-        self._fetch_html = fetch_html or self._owned_fetcher.fetch
+        self._fetch_html = fetch_html or self._owned_fetcher.fetch_text
+        self._fetch_binary = fetch_binary or (
+            self._owned_fetcher.fetch_bytes if self._owned_fetcher is not None else None
+        )
+        self._raw_storage = raw_storage
         self._list_parsers: Dict[str, object] = {
             "jbnu-main": JbnuMainNoticeListParser(),
             "k2web": K2WebNoticeListParser(),
@@ -56,7 +63,14 @@ class NoticeCollectionService:
         with session_scope() as session:
             notice_repository = ScholarshipNoticeRepository(session)
             for summary in matched_summaries:
-                detail = self._collect_detail(source, summary)
+                detail_html, detail = self._collect_detail(source, summary)
+                raw_html_path = None
+                if self._raw_storage is not None:
+                    raw_html_path = self._raw_storage.save_notice_html(
+                        source.source_board,
+                        detail.source_notice_id,
+                        detail_html,
+                    )
                 notice = notice_repository.upsert_notice(
                     ScholarshipNoticeUpsert(
                         source_board=source.source_board,
@@ -68,15 +82,25 @@ class NoticeCollectionService:
                         application_started_at=detail.application_started_at,
                         application_ended_at=detail.application_ended_at,
                         summary=detail.summary,
+                        raw_html_path=raw_html_path,
                     )
                 )
                 for attachment in detail.attachments:
+                    raw_storage_path = None
+                    if self._raw_storage is not None and self._fetch_binary is not None:
+                        raw_storage_path = self._raw_storage.save_attachment(
+                            source.source_board,
+                            detail.source_notice_id,
+                            attachment.file_name,
+                            self._fetch_binary(attachment.source_url),
+                        )
                     notice_repository.add_or_update_attachment(
                         notice_id=notice.id,
                         payload=NoticeAttachmentUpsert(
                             source_url=attachment.source_url,
                             file_name=attachment.file_name,
                             media_type=attachment.media_type,
+                            raw_storage_path=raw_storage_path,
                         ),
                     )
                 persisted_notice_ids.append(notice.id)
@@ -97,10 +121,10 @@ class NoticeCollectionService:
         return parser.parse(list_html, source)
 
     def _collect_detail(self, source: CollectorSource, summary: CollectedNoticeSummary):
-        """Fetch and parse one detail page into a persistence-ready notice payload."""
+        """Fetch raw detail HTML and parse it into a persistence-ready notice payload."""
 
         detail_html = self._fetch_html(summary.notice_url)
-        return self._detail_parser.parse(detail_html, summary, source)
+        return detail_html, self._detail_parser.parse(detail_html, summary, source)
 
     def _select_list_parser(self, source: CollectorSource):
         """Pick the parser implementation that matches the source type."""
