@@ -24,6 +24,12 @@
 - Phase 1.0: 요구사항 분석과 문서 구조 확정
 - Phase 1.1: FastAPI, SQLAlchemy, Alembic, pytest 기반 골격 구성
 - Phase 1.2: Docker Compose 기반 로컬 실행 환경과 PostgreSQL + pgvector 연결 준비
+- Phase 2.0: notice, attachment, canonical document, rule 도메인 모델과 데이터 계약 구성
+- Phase 2.1: repository, initial migration, DB 저장/조회 통합 테스트 추가
+- Phase 3.0: 본부/K2Web 게시판 source 설정과 list/detail parser 추가
+- Phase 3.1: default source collector service와 notice 적재 integration test 추가
+- Phase 4.0: local raw storage와 raw HTML/attachment 저장 추가
+- Phase 4.1: raw HTML notice normalization과 canonical document 적재 추가
 
 ## Quick Start
 ```bash
