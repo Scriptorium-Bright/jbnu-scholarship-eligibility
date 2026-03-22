@@ -35,6 +35,8 @@
 - Phase 5.1: scholarship rule/provenance persistence service 추가
 - Phase 6.0: scholarship search read model과 open scholarship query service 추가
 - Phase 6.1: `/api/v1/scholarships/search`, `/api/v1/scholarships/open` API 추가
+- Phase 7.0: deterministic eligibility engine과 explanation builder 추가
+- Phase 7.1: `POST /api/v1/scholarships/eligibility` API 추가
 
 ## Quick Start
 ```bash
@@ -47,6 +49,7 @@ docker compose up --build
 - `GET /ready`
 - `GET /api/v1/scholarships/search?query=장학금`
 - `GET /api/v1/scholarships/open`
+- `POST /api/v1/scholarships/eligibility`
 
 ## Repository Layout
 ```text
