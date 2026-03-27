@@ -10,7 +10,10 @@ from app.models.common import DocumentKind, TimestampMixin
 
 
 class CanonicalDocument(TimestampMixin, Base):
-    """Normalized text representation derived from a notice or attachment."""
+    """
+    공지사항 본문이나 첨부파일 구별 없이 순수 텍스트를 추출하여 저장하는 정규화 문서(Canonical Document) ORM 엔티티입니다.
+    룰 조각(Rule) 추출 과정에서 스크래핑 엔진이 통일된 알고리즘으로 문서를 스캔할 수 있도록 일관된 JSON 블록 구조를 제공합니다.
+    """
 
     __tablename__ = "canonical_documents"
     __table_args__ = (
@@ -62,7 +65,10 @@ class CanonicalDocument(TimestampMixin, Base):
 
 
 class ProvenanceAnchor(TimestampMixin, Base):
-    """Traceable anchor that points back to a canonical block."""
+    """
+    특정 장학 조건이 정규화 문서의 어느 단락(블록)에서 파생되었는지를 시각적으로 추적 가능하게 돕는 출처 핀(Anchor) ORM 엔티티입니다.
+    AI의 응답 근거나 사용자에게 보여줄 하이라이팅 기준(Quote, Locator) 메타데이터를 보관합니다.
+    """
 
     __tablename__ = "provenance_anchors"
     __table_args__ = (

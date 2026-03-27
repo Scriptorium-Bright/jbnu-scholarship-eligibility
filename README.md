@@ -78,6 +78,7 @@
 
 ### 5. Search
 - published rule을 notice/provenance와 함께 읽어 search read model을 만든다.
+- 후보 탐색 단계에서는 provenance를 지연 로딩하고, 최종 응답 item에만 hydrate한다.
 - lexical scoring으로 검색 결과를 정렬한다.
 - 현재 신청 가능한 공고 목록을 계산한다.
 
@@ -138,6 +139,13 @@
 - `GET /api/v1/scholarships/search?query=장학금`
 - `GET /api/v1/scholarships/open`
 - `POST /api/v1/scholarships/eligibility`
+
+## Measured Performance
+- synthetic benchmark dataset `1,500 rules / 12,000 provenance anchors` 기준
+- `GET /api/v1/scholarships/search`에서 provenance eager assembly를 제거하고 최종 응답에만 hydrate하도록 변경
+- 같은 k6 시나리오에서 `p95 12.66s -> 5.07s`, `avg 11.13s -> 4.20s`, `throughput 0.876 req/s -> 2.331 req/s`
+
+상세 측정 방법과 결과는 [docs/performance-benchmark.md](docs/performance-benchmark.md)에 정리되어 있다.
 
 ## Quick Start
 ### Docker Compose
@@ -201,6 +209,7 @@ app/       FastAPI app and domain modules
 alembic/   migration definitions
 docs/      requirements, architecture, phase logs, portfolio notes
 docker/    Dockerfile and PostgreSQL init scripts
+perf/      benchmark seed data and k6 scenarios
 tests/     unit and integration tests
 gs/        job/application reference materials kept outside product scope
 ```
@@ -209,5 +218,6 @@ gs/        job/application reference materials kept outside product scope
 - Overview: [docs/project-overview.md](docs/project-overview.md)
 - Requirements: [docs/requirements-analysis.md](docs/requirements-analysis.md)
 - System architecture: [docs/system-architecture.md](docs/system-architecture.md)
+- Performance benchmark: [docs/performance-benchmark.md](docs/performance-benchmark.md)
 - Tech stack: [docs/tech-stack.md](docs/tech-stack.md)
 - Phase logs: [docs/phase-1.0.md](docs/phase-1.0.md) ~ [docs/phase-7.1.md](docs/phase-7.1.md)

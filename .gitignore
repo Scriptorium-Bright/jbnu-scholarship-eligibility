@@ -12,6 +12,7 @@ dist/
 *.egg-info/
 
 data/
-docs/generated/
+docs/
+gs/
 
 alembic.ini.bak

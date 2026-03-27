@@ -49,7 +49,10 @@ class HeuristicScholarshipRuleExtractor:
         application_ended_at: Optional[datetime] = None,
         fallback_summary: Optional[str] = None,
     ) -> ExtractedScholarshipRule:
-        """Extract a single scholarship rule from all canonical documents for one notice."""
+        """
+        단일 공지사항에 딸린 하나 이상의 정규화 문서(본문+첨부파일) 텍스트를 정규식으로 순회하며,
+        평점, 소득분위, 학년 등의 자격 조건을 추출하여 하나의 묶음(Rule)으로 반환합니다.
+        """
 
         scholarship_name = self._extract_scholarship_name(notice_title)
         document_blocks = self._flatten_blocks(canonical_documents)
@@ -127,7 +130,10 @@ class HeuristicScholarshipRuleExtractor:
         )
 
     def _extract_scholarship_name(self, notice_title: str) -> str:
-        """Derive a stable scholarship name from the notice title."""
+        """
+        '[장학]' 형태의 머리말이나 'OO장학금' 등으로 작성된 규칙 없는 게시물 제목으로부터,
+        실제 장학명만 최대한 깔끔하게 추출해내는 정규식 기반 헬퍼 함수입니다.
+        """
 
         bracket_match = re.search(r"\[([^\[\]]*장학[^\[\]]*)\]", notice_title)
         if bracket_match is not None:
@@ -146,7 +152,10 @@ class HeuristicScholarshipRuleExtractor:
         return cleaned_title
 
     def _flatten_blocks(self, canonical_documents: Iterable[object]) -> List[Dict[str, object]]:
-        """Flatten canonical document blocks so regex heuristics can scan them uniformly."""
+        """
+        트리 구조로 되어 있는 문서 집합들을 1차원 리스트 형태의 평면(Flat) 텍스트 블록으로 펼칩니다.
+        정규식 휴리스틱 탐색 시 파일 구분 없이 순차적으로 문자열을 스캔하기 쉽게 만들기 위함입니다.
+        """
 
         flattened = []
         for document in canonical_documents:
@@ -162,7 +171,10 @@ class HeuristicScholarshipRuleExtractor:
         return flattened
 
     def _find_first(self, blocks: Iterable[Dict[str, object]], pattern: re.Pattern):
-        """Return the first block that matches the supplied regex pattern."""
+        """
+        입력된 정규식 패턴과 제일 처음 매칭되는 문서 내부의 텍스트 블록을 찾아 반환합니다.
+        성적 커트라인처럼 문서 상단에 주로 한 번만 표기되는 단일 조건값을 추출할 때 씁니다.
+        """
 
         for block in blocks:
             match = pattern.search(block["text"])
@@ -171,7 +183,10 @@ class HeuristicScholarshipRuleExtractor:
         return None
 
     def _find_all(self, blocks: Iterable[Dict[str, object]], pattern: re.Pattern) -> List[Dict[str, object]]:
-        """Return all blocks that match the supplied regex pattern."""
+        """
+        정규식 패턴과 매치되는 모든 텍스트 블록의 결과물을 스캔하여 리스트로 반환합니다.
+        대상 학년('1학년', '2학년' 등)처럼 여러 번 흩어져 언급될 수 있는 다중 조건에 쓰입니다.
+        """
 
         matches = []
         for block in blocks:
@@ -181,7 +196,10 @@ class HeuristicScholarshipRuleExtractor:
         return matches
 
     def _find_first_text(self, blocks: Iterable[Dict[str, object]], keywords: Iterable[str]):
-        """Return the first block that contains any of the supplied keywords."""
+        """
+        정규식이 아닌 단순 키워드(문자열 매치)들 중 하나라도 가장 먼저 나타나는 데이터 블록을 찾습니다.
+        '신입생'이나 '재학생' 같은 학적 상태 키워드 존재 여부를 빠르게 검증할 때 사용합니다.
+        """
 
         for block in blocks:
             if any(keyword in block["text"] for keyword in keywords):
@@ -189,7 +207,10 @@ class HeuristicScholarshipRuleExtractor:
         return None
 
     def _find_required_documents(self, blocks: Iterable[Dict[str, object]]):
-        """Extract required document lines from canonical blocks."""
+        """
+        '지원서', '성적증명서' 등의 키워드를 단서로 제출해야 할 서류 목록 텍스트 라인을 끌어옵니다.
+        정규식으로 필터링한 뒤 불필요한 중복 항목을 제거한 리스트를 도출합니다.
+        """
 
         collected_items = []
         matched_block = None
@@ -213,7 +234,10 @@ class HeuristicScholarshipRuleExtractor:
         key_suffix: str,
         description: str,
     ) -> ExtractedProvenanceAnchor:
-        """Build a provenance anchor from a matched canonical block."""
+        """
+        추출된 조건(예: 학점)이 원문 데이터의 어떤 파일, 어떤 라인에서 파생됐는지 고유 앵커(Anchor)를 만듭니다.
+        추후 사용자에게 '왜 이 조건이 걸렸는지' 원문 부분(Quote)을 강조해서 보여주는 하이라이트 근거가 됩니다.
+        """
 
         return ExtractedProvenanceAnchor(
             document_id=block_match["document_id"],

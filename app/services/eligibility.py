@@ -22,7 +22,10 @@ class EligibilityDecisionEngine:
         item: ScholarshipSearchItem,
         profile: StudentProfile,
     ) -> Tuple[str, List[EligibilityConditionCheck], List[str], List[str]]:
-        """Return a deterministic decision with detailed condition checks."""
+        """
+        특정 장학금의 자격 조건 체계(Rule)와 개별 학생 프로필을 1:1로 비교 검증합니다.
+        상세한 조건 통과/실패 내역을 취합하여 상태 판정과 누락된 정보 항목들을 반환합니다.
+        """
 
         condition_checks: List[EligibilityConditionCheck] = []
         missing_fields: List[str] = []
@@ -204,7 +207,10 @@ class EligibilityDecisionEngine:
         missing_fields: Sequence[str],
         unmet_conditions: Sequence[str],
     ) -> str:
-        """Reduce window status and condition results into one final decision."""
+        """
+        조건 불충족, 정보 수집 누락, 기간 마감 등의 다양한 요인들을 논리적으로 종합하여 최종 결과 상태를 도출합니다.
+        'eligible', 'ineligible', 'expired', 'insufficient_info' 네 가지 키워드 중 하나를 반환합니다.
+        """
 
         if application_status == "closed":
             return "expired"
@@ -225,7 +231,10 @@ class EligibilityAnswerBuilder:
         missing_fields: Sequence[str],
         unmet_conditions: Sequence[str],
     ) -> str:
-        """Translate one decision into a concise human-readable explanation."""
+        """
+        내부적으로 판정된 상태 코드와 사유들을 조합하여, 사람이 읽고 이해하기 쉬운 문장 형태(Explanation)를 생성합니다.
+        클라이언트용 API 응답에 얹어서 사용자에게 안내 목적으로 표출됩니다.
+        """
 
         if decision == "eligible":
             if item.application_status == "upcoming":
@@ -245,7 +254,10 @@ class EligibilityAnswerBuilder:
         return "신청 기간 정보가 부족해 지원 가능 여부를 확정할 수 없습니다."
 
     def _translate_field_name(self, field_name: str) -> str:
-        """Map internal profile field names to concise Korean labels."""
+        """
+        영문으로 된 프로필 필드명(예: gpa)을 UI 노출에 적합한 한글 명칭(예: 평점)으로 단순 매핑합니다.
+        누락 정보 안내 문구 내에 자연스럽게 필드 이름을 삽입하기 위한 번역 헬퍼입니다.
+        """
 
         return {
             "gpa": "평점",
@@ -277,7 +289,10 @@ class ScholarshipEligibilityService:
         limit: int = 10,
         reference_time: Optional[datetime] = None,
     ) -> ScholarshipEligibilityResponse:
-        """Return eligibility decisions for scholarships matched against one profile."""
+        """
+        검색어나 전체 목록에서 대상 장학물들을 수집한 후, 학생 프로필과 각각 대조 평가를 수행합니다.
+        최종 판정 결과와 출처 데이터들을 우선순위에 맞게 정렬하여 일괄 응답용 객체(Response)로 반환합니다.
+        """
 
         reference_time = reference_time or now_in_seoul()
         candidate_items = self._load_candidate_items(
@@ -290,6 +305,7 @@ class ScholarshipEligibilityService:
             for item in candidate_items
         ]
         evaluated_items = sorted(evaluated_items, key=self._decision_sort_key)[:limit]
+        self.search_service.populate_provenance(evaluated_items)
 
         return ScholarshipEligibilityResponse(
             profile=profile,
@@ -305,22 +321,32 @@ class ScholarshipEligibilityService:
         query: Optional[str],
         reference_time: datetime,
     ) -> List[ScholarshipSearchItem]:
-        """Load candidate scholarships from either the search API path or all published rules."""
+        """
+        검색어가 있을 경우 검색 API 계층을 거치고, 없을 경우 기준 시간에 유효하게 열린 모든 규정 목록을 불러옵니다.
+        이후 판정 엔진의 For 루프에 투입될 기초 장학금 후보군(Candidate List)을 준비합니다.
+        """
 
         if query:
             return self.search_service.search(
                 query,
                 reference_time=reference_time,
                 limit=50,
+                include_provenance=False,
             ).items
-        return self.search_service.list_published_scholarships(reference_time=reference_time)
+        return self.search_service.list_published_scholarships(
+            reference_time=reference_time,
+            include_provenance=False,
+        )
 
     def _evaluate_item(
         self,
         item: ScholarshipSearchItem,
         profile: StudentProfile,
     ) -> ScholarshipEligibilityItem:
-        """Attach decision, explanation, and condition diagnostics to one scholarship item."""
+        """
+        단일 검색 항목(Item)에 대해서 실제 프로필 비교 검증 및 안내 문구 생성 로직을 차례대로 적용합니다.
+        평가 과정에서 도출된 상세한 Condition Check 값들을 모두 통합한 뒤 DTO 모델로 감싸 반환합니다.
+        """
 
         decision, condition_checks, missing_fields, unmet_conditions = self.decision_engine.evaluate(
             item,
@@ -348,7 +374,10 @@ class ScholarshipEligibilityService:
         )
 
     def _decision_sort_key(self, item: ScholarshipEligibilityItem) -> Tuple[int, int, float, float]:
-        """Prefer actionable decisions first while keeping stronger matches near the top."""
+        """
+        클라이언트 우선순위(지원 가능 > 정보 부족 > 지원 불가 등)와 기간 등을 기준으로 다중 정렬 튜플을 부여합니다.
+        최대한 사용자에게 Actionable(행동 가능)한 정보가 상단에 노출되도록 결과를 정렬할 때 쓰입니다.
+        """
 
         return (
             self._decision_rank(item.decision),
@@ -358,7 +387,10 @@ class ScholarshipEligibilityService:
         )
 
     def _decision_rank(self, decision: str) -> int:
-        """Convert decision text into a stable response ordering priority."""
+        """
+        문자열 형태의 판정 결과를 내부 기준 0부터 시작하는 숫자 랭크 파라미터로 사상(치환)합니다.
+        다중 정렬 알고리즘에서 상위에 위치해야 할 항목일수록 더 낮은 숫자를 가지게 설계되어 있습니다.
+        """
 
         return {
             "eligible": 0,

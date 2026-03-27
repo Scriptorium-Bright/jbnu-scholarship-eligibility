@@ -7,6 +7,10 @@ from app.core.logging import configure_logging
 
 
 def create_app() -> FastAPI:
+    """
+    FastAPI 어플리케이션 객체를 생성하고 초기화합니다.
+    설정, 로깅, 라우터 연결 등 전역 환경을 구성하여 반환합니다.
+    """
     settings = get_settings()
     configure_logging(settings.log_level)
 

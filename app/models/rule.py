@@ -11,7 +11,10 @@ from app.models.common import RuleStatus, TimestampMixin
 
 
 class ScholarshipRule(TimestampMixin, Base):
-    """Structured scholarship rule extracted from a canonical document."""
+    """
+    가공된 정규화 문서들 속에서 자격(성적, 소득분위, 학년 등) 요건만을 구체적으로 추출해낸 핵심 비즈니스 도메인 ORM 엔티티입니다.
+    실질적인 학생 엘리지빌리티(Eligibility) 판정 엔진이 이 구조화된 Qualification JSON 데이터를 기반으로 합불 검사를 실행합니다.
+    """
 
     __tablename__ = "scholarship_rules"
     __table_args__ = (

@@ -18,13 +18,19 @@ _APPLICATION_WINDOW_PATTERN = re.compile(
 
 
 def _clean_text(text: str) -> str:
-    """Normalize repeated whitespace so parsed values stay comparable."""
+    """
+    연속된 빈칸과 줄바꿈 문자를 단일 공백으로 치환하여 텍스트를 매끄럽게 정규화합니다.
+    파싱된 문자열 데이터들이 일관된 형식으로 비교 및 저장될 수 있도록 보장합니다.
+    """
 
     return re.sub(r"\s+", " ", text or "").strip()
 
 
 def _first_text(root: Tag, selectors: Sequence[str]) -> str:
-    """Return the first non-empty text that matches one of the CSS selectors."""
+    """
+    주어진 여러 CSS 선택자(Selector) 목록 중 제일 먼저 일치하는 DOM 요소의 텍스트를 반환합니다.
+    버전이나 구조가 상이한 여러 게시판 템플릿에서도 유연하게 필요한 값을 긁어오기 위함입니다.
+    """
 
     for selector in selectors:
         node = root.select_one(selector)
@@ -36,7 +42,10 @@ def _first_text(root: Tag, selectors: Sequence[str]) -> str:
 
 
 def _parse_notice_datetime(raw_text: str) -> datetime:
-    """Parse common JBNU date formats into timezone-aware Seoul datetimes."""
+    """
+    기본적인 날짜 문자열(예: YYYY-MM-DD 등)을 파싱하여 타임존(KST)이 반영된 datetime 객체를 만듭니다.
+    각기 다른 게시판에서 표시하는 날짜 포맷의 파편화를 하나의 일관된 기준으로 맞춥니다.
+    """
 
     normalized = _clean_text(raw_text).replace("/", "-").replace(".", "-")
     for pattern in ("%Y-%m-%d %H:%M", "%Y-%m-%d"):
@@ -49,7 +58,10 @@ def _parse_notice_datetime(raw_text: str) -> datetime:
 
 
 def _extract_notice_id(notice_url: str) -> str:
-    """Derive a stable source notice id from common query or path formats."""
+    """
+    게시글의 고유 링크에서 쿼리 파라미터나 URL 경로를 추출해 식별가능한 고유 ID 문자열을 뽑아냅니다.
+    중복된 수집을 걸러내고 향후 원본 글을 다시 찾을 수 있게 하는 Key 정보로 활용됩니다.
+    """
 
     parsed_url = urlparse(notice_url)
     query_params = parse_qs(parsed_url.query)
@@ -68,7 +80,10 @@ def _extract_notice_id(notice_url: str) -> str:
 
 
 def _parse_application_window(body_text: str) -> Tuple[Optional[datetime], Optional[datetime]]:
-    """Extract an application window if the body contains one."""
+    """
+    본문 텍스트 안에 'YYYY-MM-DD ~ YYYY-MM-DD' 형태의 신청 유효 기간이 들어있는지 정규식으로 찾습니다.
+    발견될 경우 해당 기간의 시작 날짜와 종료 날짜를 타임존 객체로 변환하여 두 개의 반환값으로 줍니다.
+    """
 
     match = _APPLICATION_WINDOW_PATTERN.search(body_text)
     if match is None:
@@ -81,14 +96,20 @@ def _parse_application_window(body_text: str) -> Tuple[Optional[datetime], Optio
 
 
 def _infer_media_type(file_name: str, source_url: str) -> str:
-    """Infer a content type from the file name first and URL as fallback."""
+    """
+    파일의 이름이나 URL에서 발견되는 확장자를 토대로 데이터의 MIME 타입(예: application/pdf)을 유추합니다.
+    파악이 어려운 미지의 파일일 경우 기본값인 범용 바이트 스트림(octet-stream) 타입을 쥐어줍니다.
+    """
 
     media_type, _ = mimetypes.guess_type(file_name or source_url)
     return media_type or "application/octet-stream"
 
 
 def _extract_detail_label(root: Tag, labels: Sequence[str]) -> str:
-    """Read dd/td values that follow common metadata labels on detail pages."""
+    """
+    HTML 태그 중에서 '작성일', '조회수' 같이 특징적인 라벨 바로 뒤에 오는 데이터 문자열을 추출합니다.
+    테이블 뷰나 설명 목록(dt/dd)으로 레이아웃이 잡혀있는 상세 페이지 메타데이터를 파싱할 때 쓰입니다.
+    """
 
     for label in labels:
         for tag_name in ("dt", "th", "strong", "span"):
@@ -104,7 +125,10 @@ def _extract_detail_label(root: Tag, labels: Sequence[str]) -> str:
 
 
 def _extract_attachment_links(root: Tag, base_url: str) -> List[CollectedAttachment]:
-    """Collect attachment links from known attachment containers."""
+    """
+    공지사항 상세 본문 내부의 첨부파일 링크(a 태그)를 찾아 다운로드 가능한 URL 리스트를 만듭니다.
+    중복되는 파일 주소를 제외하고 깔끔한 이름과 MIME 타입이 래핑된 첨부파일 객체들을 수집합니다.
+    """
 
     attachments = []
     seen_urls = set()
@@ -127,7 +151,10 @@ def _extract_attachment_links(root: Tag, base_url: str) -> List[CollectedAttachm
 
 
 def _dedupe_summaries(summaries: Iterable[CollectedNoticeSummary]) -> List[CollectedNoticeSummary]:
-    """Keep the first occurrence of each external notice id in list results."""
+    """
+    하나의 목록 페이지 안에 같은 식별자를 가진 게시글이 여러 번 노출되는 경우를 필터링합니다.
+    불필요한 중복 수집 작업을 피하기 위해 제일 처음 발견된 항목만 살려두는 역할을 합니다.
+    """
 
     deduped = []
     seen_ids = set()
@@ -143,7 +170,10 @@ class JbnuMainNoticeListParser:
     """Parse the JBNU main notice board list page."""
 
     def parse(self, html: str, source: CollectorSource) -> List[CollectedNoticeSummary]:
-        """Extract list-page summaries from the main university board."""
+        """
+        전북대 본부가 운영하는 메인 게시판의 HTML 목록 화면을 순회하면서 글들의 정보를 파싱합니다.
+        제목, 게시일정, 부서명 등의 핵심 데이터를 추출해 가벼운 요약본 리스트로 만들어줍니다.
+        """
 
         soup = BeautifulSoup(html, "html.parser")
         summaries = []
@@ -182,7 +212,10 @@ class K2WebNoticeListParser:
     """Parse K2Web-based department board list pages."""
 
     def parse(self, html: str, source: CollectorSource) -> List[CollectedNoticeSummary]:
-        """Extract list-page summaries from K2Web board tables."""
+        """
+        K2Web 시스템을 쓰는 단과대/학과 게시판의 HTML 목록 화면을 전용 룰에 맞춰 파싱합니다.
+        마찬가지로 테이블 구조에서 게시글 제목과 정보를 추출해 요약 모델로 감싸 반환합니다.
+        """
 
         soup = BeautifulSoup(html, "html.parser")
         summaries = []
@@ -221,7 +254,10 @@ class GenericNoticeDetailParser:
     """Parse notice detail pages from the main board and K2Web pages."""
 
     def parse(self, html: str, summary: CollectedNoticeSummary, source: CollectorSource) -> CollectedNotice:
-        """Extract detail text, application window, and attachments from one page."""
+        """
+        게시글 상세 화면 안에 담긴 장문의 본문 텍스트와 여러 첨부파일 링크를 꼼꼼하게 추출합니다.
+        기존 목록에서 받아둔 요약 정보와 병합하여 최종 저장에 사용될 완전한 데이터 객체를 생성합니다.
+        """
 
         soup = BeautifulSoup(html, "html.parser")
         body_root = soup.select_one(

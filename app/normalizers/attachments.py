@@ -16,7 +16,10 @@ class UnsupportedAttachmentError(ValueError):
 
 
 def _clean_text(text: str) -> str:
-    """Normalize repeated whitespace for extracted attachment text."""
+    """
+    여러 줄바꿈과 연속된 공백 문자를 단일 띄어쓰기로 압축하여 파싱된 텍스트 크기를 최적화합니다.
+    검색 시 공백 차이로 인한 매칭 실패를 예방하고 출처 문장을 정돈합니다.
+    """
 
     return " ".join((text or "").split())
 
@@ -25,7 +28,10 @@ class PdfAttachmentTextExtractor:
     """Extract text from PDF attachments using pypdf."""
 
     def extract(self, raw_bytes: bytes) -> str:
-        """Return concatenated text for all pages in the PDF payload."""
+        """
+        바이너리로 전달된 PDF 파일 내용에서 pypdf를 이용하여 모든 페이지의 텍스트를 추출합니다.
+        각 페이지별 텍스트를 정돈(_clean_text)한 후 하나의 긴 문자열로 병합합니다.
+        """
 
         reader = PdfReader(BytesIO(raw_bytes))
         page_texts = []
@@ -40,7 +46,10 @@ class HwpPreviewTextExtractor:
     """Extract preview text from HWP attachments through the OLE `PrvText` stream."""
 
     def extract(self, raw_bytes: bytes) -> str:
-        """Read the `PrvText` preview stream and decode it as UTF-16LE text."""
+        """
+        구형 HWP 파일 포맷의 OLE 구조에 접근하여 'PrvText' 부분(미리보기 텍스트)만 가볍게 읽어냅니다.
+        이를 파이썬이 해석 가능한 UTF-16LE 기반 텍스트로 안전하게 디코딩합니다.
+        """
 
         ole = olefile.OleFileIO(BytesIO(raw_bytes))
         try:
@@ -61,7 +70,10 @@ class PlainTextAttachmentTextExtractor:
     """Decode text-like attachment bytes as UTF-8."""
 
     def extract(self, raw_bytes: bytes) -> str:
-        """Decode plain text bytes and normalize the resulting whitespace."""
+        """
+        메모장 파일(.txt)이나 마크다운 형식 등의 일반 텍스트 바이트 배열을 UTF-8로 디코딩합니다.
+        디코딩된 내용이 비어있을 경우 부적합 예외(UnsupportedAttachmentError)를 발생시킵니다.
+        """
 
         extracted = _clean_text(raw_bytes.decode("utf-8"))
         if not extracted:
@@ -78,7 +90,10 @@ class AttachmentDocumentNormalizer:
         hwp_extractor: Optional[HwpPreviewTextExtractor] = None,
         text_extractor: Optional[PlainTextAttachmentTextExtractor] = None,
     ):
-        """Prepare extractor implementations used for different attachment types."""
+        """
+        PDF, HWP, 텍스트 형태의 확장자별 전용 파싱 객체(Extractor) 타입들을 각각 주입받아 준비합니다.
+        추후 분기 처리(Strategy)를 통해 파일 타입에 알맞은 파서를 호출합니다.
+        """
 
         self._pdf_extractor = pdf_extractor or PdfAttachmentTextExtractor()
         self._hwp_extractor = hwp_extractor or HwpPreviewTextExtractor()
@@ -92,7 +107,10 @@ class AttachmentDocumentNormalizer:
         media_type: str,
         raw_bytes: bytes,
     ) -> CanonicalDocumentUpsert:
-        """Extract text from one attachment and wrap it as a canonical document."""
+        """
+        각종 첨부파일 포맷을 자동으로 인식 및 텍스트화 한 뒤, 단락을 나누어 통일된 블록셋(Blocks) 구조체로 래핑합니다.
+        이를 DB에 즉시 삽입(Upsert) 가능한 형태인 CanonicalDocumentUpsert 형태로 리턴해 줍니다.
+        """
 
         document_kind, extracted_text = self._extract_text(file_name, media_type, raw_bytes)
         lines = [line.strip() for line in extracted_text.splitlines() if line.strip()]
@@ -127,7 +145,10 @@ class AttachmentDocumentNormalizer:
         media_type: str,
         raw_bytes: bytes,
     ) -> Tuple[DocumentKind, str]:
-        """Pick the extractor that matches the attachment extension or media type."""
+        """
+        파일의 영문 확장자 및 MIME 미디어 타입을 분석하여 어떤 추출기(PDF/HWP/TXT)를 사용할지 판단합니다.
+        선택된 추출기를 통해 뽑힌 문자열 원문과 식별된 파일 종류(DocumentKind)를 넘겨줍니다.
+        """
 
         extension = Path(file_name).suffix.lower()
         if extension == ".pdf" or media_type == "application/pdf":

@@ -13,12 +13,18 @@ class ScholarshipRuleExtractionService:
     """Extract structured scholarship rules and provenance from canonical documents."""
 
     def __init__(self, extractor: Optional[HeuristicScholarshipRuleExtractor] = None):
-        """Prepare the heuristic extractor used for notice-level rule extraction."""
+        """
+        시스템에서 제공하는 기본 추출기(휴리스틱 룰 추출기)를 외부로부터 주입받아 초기화합니다.
+        실제 텍스트 분석과 규칙 생성 작업의 토대를 마련합니다.
+        """
 
         self._extractor = extractor or HeuristicScholarshipRuleExtractor()
 
     def extract_notice(self, notice_id: int):
-        """Extract scholarship rules for one notice and persist rules plus provenance."""
+        """
+        해당 공지사항에 속한 정규화 문서 집합을 불러와 장학금 선발 규정과 근거(Provenance)를 체계적으로 추출합니다.
+        생성된 구조화된 규칙들을 DB의 기존 룰 내역 및 앵커 데이터와 원자적으로 교체(Replace)합니다.
+        """
 
         with session_scope() as session:
             notice_repository = ScholarshipNoticeRepository(session)
