@@ -20,6 +20,17 @@ heuristic extractor와 LLM extractor가 같은 출력 계약을 따르도록 ext
 - `tests/unit/test_phase8_extractor_contract.py` 추가
 - `docs/phase-8.0.md` 추가
 
+## What Changed
+- 기존 구조:
+  - `ScholarshipRuleExtractionService`가 `HeuristicScholarshipRuleExtractor` concrete class에 직접 의존했다.
+  - extractor 결과 dataclass와 구현체가 같은 파일에 묶여 있었다.
+- 이번 수정:
+  - extractor 결과 계약과 공용 interface를 `app/extractors/base.py`로 분리했다.
+  - heuristic extractor는 공용 contract를 구현하는 구현체로 재정리했다.
+  - rule extraction service는 concrete class 대신 contract 타입을 주입받도록 바꿨다.
+- 변경 이유:
+  - phase 8.1 이후 LLM extractor를 붙일 때 service, persistence, search, eligibility를 흔들지 않고 extractor만 교체하기 위해서다.
+
 ## How To Read This Phase
 - 먼저 `app/extractors/base.py`를 읽고 phase 8 extractor contract가 무엇인지 확인한다.
 - 다음으로 `app/extractors/scholarship_rules.py`를 읽어 기존 heuristic 구현이 새 contract에 어떻게 맞춰지는지 본다.
@@ -28,8 +39,31 @@ heuristic extractor와 LLM extractor가 같은 출력 계약을 따르도록 ext
 ## File Guide
 - `app/extractors/base.py`: structured extraction 공용 protocol 또는 abstract base
 - `app/extractors/scholarship_rules.py`: heuristic extractor를 contract 구현체로 정리
+- `app/extractors/__init__.py`: extractor public export 경계에 contract 타입 추가
 - `app/services/rule_extraction.py`: extractor 주입 지점 정리
 - `tests/unit/test_phase8_extractor_contract.py`: heuristic extractor와 future llm extractor가 같은 반환 계약을 지키는지 검증
+
+## Python File Breakdown
+- [`app/extractors/base.py`](/Users/jeonjeonghyeon/studyCollection/jbnu-scholarship-eligibility/app/extractors/base.py): heuristic와 future LLM extractor가 공통으로 따라야 할 결과 타입과 protocol을 분리한 파일
+- [`app/extractors/scholarship_rules.py`](/Users/jeonjeonghyeon/studyCollection/jbnu-scholarship-eligibility/app/extractors/scholarship_rules.py): 기존 regex extractor를 공용 contract 구현체로 재배치한 파일
+- [`app/extractors/__init__.py`](/Users/jeonjeonghyeon/studyCollection/jbnu-scholarship-eligibility/app/extractors/__init__.py): 외부 import 지점에서 contract 타입까지 함께 노출하도록 정리한 파일
+- [`app/services/rule_extraction.py`](/Users/jeonjeonghyeon/studyCollection/jbnu-scholarship-eligibility/app/services/rule_extraction.py): orchestration service가 concrete extractor 대신 contract에 의존하도록 바꾼 파일
+- [`tests/unit/test_phase8_extractor_contract.py`](/Users/jeonjeonghyeon/studyCollection/jbnu-scholarship-eligibility/tests/unit/test_phase8_extractor_contract.py): extractor contract와 service 주입 경로를 검증하는 테스트 파일
+
+## Added / Updated Methods
+### [`app/extractors/base.py`](/Users/jeonjeonghyeon/studyCollection/jbnu-scholarship-eligibility/app/extractors/base.py)
+- `StructuredRuleExtractor.extract_notice_rule`: 어떤 extractor 구현체든 동일한 입력과 동일한 반환 계약을 지키게 만드는 공용 메서드 계약
+
+### [`app/extractors/scholarship_rules.py`](/Users/jeonjeonghyeon/studyCollection/jbnu-scholarship-eligibility/app/extractors/scholarship_rules.py)
+- `HeuristicScholarshipRuleExtractor.extract_notice_rule`: phase 5에서 만든 regex 기반 추출 로직을 유지하되, 이제는 공용 contract 구현체로 동작
+
+### [`app/services/rule_extraction.py`](/Users/jeonjeonghyeon/studyCollection/jbnu-scholarship-eligibility/app/services/rule_extraction.py)
+- `ScholarshipRuleExtractionService.__init__`: concrete heuristic extractor가 아니라 `StructuredRuleExtractor`를 주입받아 future LLM extractor와 교체 가능하게 만든다
+- `ScholarshipRuleExtractionService.extract_notice`: downstream persistence는 그대로 유지하면서도 공용 extractor contract만 호출하도록 orchestration 경계를 유지한다
+
+### [`tests/unit/test_phase8_extractor_contract.py`](/Users/jeonjeonghyeon/studyCollection/jbnu-scholarship-eligibility/tests/unit/test_phase8_extractor_contract.py)
+- `test_phase8_heuristic_extractor_satisfies_structured_rule_contract`: 기존 heuristic extractor가 새 protocol을 만족하는지 검증
+- `test_phase8_rule_extraction_service_accepts_any_structured_rule_extractor`: service가 concrete extractor가 아니라 contract 구현체를 주입받는지 검증
 
 ## Method Guide
 ### `app/extractors/base.py`
