@@ -4,7 +4,7 @@ from collections import defaultdict
 from typing import Dict, List, Optional
 
 from app.db import session_scope
-from app.extractors import HeuristicScholarshipRuleExtractor
+from app.extractors import HeuristicScholarshipRuleExtractor, StructuredRuleExtractor
 from app.repositories import CanonicalDocumentRepository, ScholarshipNoticeRepository, ScholarshipRuleRepository
 from app.schemas import ProvenanceAnchorCreate, ScholarshipRuleCreate
 
@@ -12,10 +12,10 @@ from app.schemas import ProvenanceAnchorCreate, ScholarshipRuleCreate
 class ScholarshipRuleExtractionService:
     """Extract structured scholarship rules and provenance from canonical documents."""
 
-    def __init__(self, extractor: Optional[HeuristicScholarshipRuleExtractor] = None):
+    def __init__(self, extractor: Optional[StructuredRuleExtractor] = None):
         """
-        시스템에서 제공하는 기본 추출기(휴리스틱 룰 추출기)를 외부로부터 주입받아 초기화합니다.
-        실제 텍스트 분석과 규칙 생성 작업의 토대를 마련합니다.
+        공용 structured extraction contract를 따르는 구현체를 주입받아 초기화합니다.
+        phase 8부터는 heuristic extractor와 future LLM extractor가 같은 자리에서 교체됩니다.
         """
 
         self._extractor = extractor or HeuristicScholarshipRuleExtractor()

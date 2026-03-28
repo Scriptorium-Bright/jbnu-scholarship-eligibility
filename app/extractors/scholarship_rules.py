@@ -1,40 +1,18 @@
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Dict, Iterable, List, Optional
 
+from app.extractors.base import (
+    ExtractedProvenanceAnchor,
+    ExtractedScholarshipRule,
+    StructuredRuleExtractor,
+)
 from app.models import RuleStatus
 
 
-@dataclass(frozen=True)
-class ExtractedProvenanceAnchor:
-    """Provenance anchor candidate produced during heuristic extraction."""
-
-    document_id: int
-    anchor_key: str
-    block_id: str
-    quote_text: str
-    page_number: Optional[int] = None
-    locator: Dict[str, object] = field(default_factory=dict)
-
-
-@dataclass(frozen=True)
-class ExtractedScholarshipRule:
-    """Structured scholarship rule produced before repository persistence."""
-
-    scholarship_name: str
-    qualification: Dict[str, object]
-    provenance_anchors: List[ExtractedProvenanceAnchor]
-    source_document_id: Optional[int]
-    application_started_at: Optional[datetime]
-    application_ended_at: Optional[datetime]
-    summary_text: Optional[str]
-    status: RuleStatus = RuleStatus.PUBLISHED
-
-
-class HeuristicScholarshipRuleExtractor:
+class HeuristicScholarshipRuleExtractor(StructuredRuleExtractor):
     """Extract one scholarship rule from canonical documents using regex heuristics."""
 
     _GPA_PATTERN = re.compile(r"(?:평점|평균평점|성적).{0,12}?([0-4]\.\d{1,2})\s*이상")
