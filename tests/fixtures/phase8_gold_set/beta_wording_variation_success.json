@@ -1,0 +1,144 @@
+{
+  "sample_id": "beta-wording-variation-success",
+  "notice": {
+    "source_board": "jbnu-eval",
+    "source_notice_id": "beta-wording-variation-success",
+    "title": "[희망브릿지장학금] 2026학년도 2학기 장학생 모집",
+    "notice_url": "https://example.test/eval/beta",
+    "published_at": "2026-04-10T09:00:00",
+    "application_started_at": "2026-04-10T09:00:00",
+    "application_ended_at": "2026-04-17T18:00:00",
+    "summary": "표현이 다양한 규정 공지"
+  },
+  "attachments": [
+    {
+      "attachment_ref": "guide-text",
+      "source_url": "https://example.test/eval/beta/guide.txt",
+      "file_name": "guide.txt",
+      "media_type": "text/plain"
+    }
+  ],
+  "documents": [
+    {
+      "document_ref": "notice-main",
+      "document_kind": "notice_html",
+      "source_label": "notice-html",
+      "canonical_text": "희망브릿지장학금\n평균 평점 3.50 이상인 학생\n소득 7구간 이하 학생\n2, 3학년 재학생\n복학생도 지원 가능",
+      "blocks": [
+        {
+          "block_id": "notice-block-1",
+          "text": "희망브릿지장학금",
+          "page_number": 1
+        },
+        {
+          "block_id": "notice-block-2",
+          "text": "평균 평점 3.50 이상인 학생",
+          "page_number": 1
+        },
+        {
+          "block_id": "notice-block-3",
+          "text": "소득 7구간 이하 학생",
+          "page_number": 1
+        },
+        {
+          "block_id": "notice-block-4",
+          "text": "2, 3학년 재학생",
+          "page_number": 1
+        },
+        {
+          "block_id": "notice-block-5",
+          "text": "복학생도 지원 가능",
+          "page_number": 1
+        }
+      ]
+    },
+    {
+      "document_ref": "guide-text-doc",
+      "attachment_ref": "guide-text",
+      "document_kind": "attachment_text",
+      "source_label": "attachment-text",
+      "canonical_text": "제출서류: 장학금신청서, 재학증명서",
+      "blocks": [
+        {
+          "block_id": "attachment-block-1",
+          "text": "제출서류: 장학금신청서, 재학증명서",
+          "page_number": 2
+        }
+      ]
+    }
+  ],
+  "expected": {
+    "scholarship_name": "희망브릿지장학금",
+    "qualification": {
+      "gpa_min": 3.5,
+      "income_bracket_max": 7,
+      "grade_levels": [2, 3],
+      "enrollment_status": ["재학생", "복학생"],
+      "required_documents": ["장학금신청서", "재학증명서"]
+    },
+    "evidence_block_ids": [
+      "notice-block-1",
+      "notice-block-2",
+      "notice-block-3",
+      "notice-block-4",
+      "notice-block-5",
+      "attachment-block-1"
+    ]
+  },
+  "provider_case": {
+    "behavior": "success",
+    "scholarship_name": "희망브릿지장학금",
+    "summary_text": "표현이 다양한 규정 공지",
+    "qualification": {
+      "gpa_min": 3.5,
+      "income_bracket_max": 7,
+      "grade_levels": [2, 3],
+      "enrollment_status": ["재학생", "복학생"],
+      "required_documents": ["장학금신청서", "재학증명서"]
+    },
+    "evidence": [
+      {
+        "field_name": "scholarship_name",
+        "document_ref": "notice-main",
+        "block_id": "notice-block-1",
+        "page_number": 1,
+        "quote_text": "희망브릿지장학금"
+      },
+      {
+        "field_name": "qualification.gpa_min",
+        "document_ref": "notice-main",
+        "block_id": "notice-block-2",
+        "page_number": 1,
+        "quote_text": "평균 평점 3.50 이상인 학생"
+      },
+      {
+        "field_name": "qualification.income_bracket_max",
+        "document_ref": "notice-main",
+        "block_id": "notice-block-3",
+        "page_number": 1,
+        "quote_text": "소득 7구간 이하 학생"
+      },
+      {
+        "field_name": "qualification.grade_levels",
+        "document_ref": "notice-main",
+        "block_id": "notice-block-4",
+        "page_number": 1,
+        "quote_text": "2, 3학년 재학생"
+      },
+      {
+        "field_name": "qualification.enrollment_status",
+        "document_ref": "notice-main",
+        "block_id": "notice-block-5",
+        "page_number": 1,
+        "quote_text": "복학생도 지원 가능"
+      },
+      {
+        "field_name": "qualification.required_documents",
+        "document_ref": "guide-text-doc",
+        "block_id": "attachment-block-1",
+        "page_number": 2,
+        "quote_text": "제출서류: 장학금신청서, 재학증명서"
+      }
+    ]
+  }
+}

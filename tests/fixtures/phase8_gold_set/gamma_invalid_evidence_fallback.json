@@ -1,0 +1,131 @@
+{
+  "sample_id": "gamma-invalid-evidence-fallback",
+  "notice": {
+    "source_board": "jbnu-eval",
+    "source_notice_id": "gamma-invalid-evidence-fallback",
+    "title": "[이음장학금] 2026학년도 1학기 장학생 선발",
+    "notice_url": "https://example.test/eval/gamma",
+    "published_at": "2026-04-20T09:00:00",
+    "application_started_at": "2026-04-20T09:00:00",
+    "application_ended_at": "2026-04-27T18:00:00",
+    "summary": "fallback 평가용 invalid evidence 샘플"
+  },
+  "attachments": [
+    {
+      "attachment_ref": "guide-text",
+      "source_url": "https://example.test/eval/gamma/guide.txt",
+      "file_name": "guide.txt",
+      "media_type": "text/plain"
+    }
+  ],
+  "documents": [
+    {
+      "document_ref": "notice-main",
+      "document_kind": "notice_html",
+      "source_label": "notice-html",
+      "canonical_text": "이음장학금\n직전학기 평점 3.00 이상인 재학생\n소득 8분위 이하 학생\n1학년 또는 2학년 재학생",
+      "blocks": [
+        {
+          "block_id": "notice-block-1",
+          "text": "이음장학금",
+          "page_number": 1
+        },
+        {
+          "block_id": "notice-block-2",
+          "text": "직전학기 평점 3.00 이상인 재학생",
+          "page_number": 1
+        },
+        {
+          "block_id": "notice-block-3",
+          "text": "소득 8분위 이하 학생",
+          "page_number": 1
+        },
+        {
+          "block_id": "notice-block-4",
+          "text": "1학년 또는 2학년 재학생",
+          "page_number": 1
+        }
+      ]
+    },
+    {
+      "document_ref": "guide-text-doc",
+      "attachment_ref": "guide-text",
+      "document_kind": "attachment_text",
+      "source_label": "attachment-text",
+      "canonical_text": "제출서류: 장학금지원서, 추천서",
+      "blocks": [
+        {
+          "block_id": "attachment-block-1",
+          "text": "제출서류: 장학금지원서, 추천서",
+          "page_number": 2
+        }
+      ]
+    }
+  ],
+  "expected": {
+    "scholarship_name": "이음장학금",
+    "qualification": {
+      "gpa_min": 3.0,
+      "income_bracket_max": 8,
+      "grade_levels": [1, 2],
+      "enrollment_status": ["재학생"],
+      "required_documents": ["장학금지원서", "추천서"]
+    },
+    "evidence_block_ids": [
+      "notice-block-1",
+      "notice-block-2",
+      "notice-block-3",
+      "notice-block-4",
+      "attachment-block-1"
+    ]
+  },
+  "provider_case": {
+    "behavior": "invalid_evidence",
+    "scholarship_name": "이음장학금",
+    "summary_text": "fallback 평가용 invalid evidence 샘플",
+    "qualification": {
+      "gpa_min": 3.0,
+      "income_bracket_max": 8,
+      "grade_levels": [1, 2],
+      "enrollment_status": ["재학생"],
+      "required_documents": ["장학금지원서", "추천서"]
+    },
+    "evidence": [
+      {
+        "field_name": "scholarship_name",
+        "document_ref": "notice-main",
+        "block_id": "notice-block-1",
+        "page_number": 1,
+        "quote_text": "이음장학금"
+      },
+      {
+        "field_name": "qualification.gpa_min",
+        "document_ref": "notice-main",
+        "block_id": "notice-block-2",
+        "page_number": 1,
+        "quote_text": "직전학기 평점 3.00 이상인 재학생"
+      },
+      {
+        "field_name": "qualification.income_bracket_max",
+        "document_ref": "notice-main",
+        "block_id": "notice-block-3",
+        "page_number": 1,
+        "quote_text": "소득 8분위 이하 학생"
+      },
+      {
+        "field_name": "qualification.grade_levels",
+        "document_ref": "notice-main",
+        "block_id": "notice-block-4",
+        "page_number": 1,
+        "quote_text": "1학년 또는 2학년 재학생"
+      },
+      {
+        "field_name": "qualification.required_documents",
+        "document_ref": "guide-text-doc",
+        "block_id": "missing-block-id",
+        "page_number": 2,
+        "quote_text": "제출서류: 장학금지원서, 추천서"
+      }
+    ]
+  }
+}

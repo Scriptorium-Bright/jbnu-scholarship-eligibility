@@ -1,0 +1,85 @@
+{
+  "sample_id": "delta-transport-error-fallback",
+  "notice": {
+    "source_board": "jbnu-eval",
+    "source_notice_id": "delta-transport-error-fallback",
+    "title": "[새솔장학금] 2026학년도 2학기 장학생 선발",
+    "notice_url": "https://example.test/eval/delta",
+    "published_at": "2026-04-25T09:00:00",
+    "application_started_at": "2026-04-25T09:00:00",
+    "application_ended_at": "2026-05-02T18:00:00",
+    "summary": "fallback 평가용 transport error 샘플"
+  },
+  "attachments": [
+    {
+      "attachment_ref": "guide-text",
+      "source_url": "https://example.test/eval/delta/guide.txt",
+      "file_name": "guide.txt",
+      "media_type": "text/plain"
+    }
+  ],
+  "documents": [
+    {
+      "document_ref": "notice-main",
+      "document_kind": "notice_html",
+      "source_label": "notice-html",
+      "canonical_text": "새솔장학금\n직전학기 평점평균 3.40 이상인 재학생\n소득 6분위 이하 학생\n4학년 재학생",
+      "blocks": [
+        {
+          "block_id": "notice-block-1",
+          "text": "새솔장학금",
+          "page_number": 1
+        },
+        {
+          "block_id": "notice-block-2",
+          "text": "직전학기 평점평균 3.40 이상인 재학생",
+          "page_number": 1
+        },
+        {
+          "block_id": "notice-block-3",
+          "text": "소득 6분위 이하 학생",
+          "page_number": 1
+        },
+        {
+          "block_id": "notice-block-4",
+          "text": "4학년 재학생",
+          "page_number": 1
+        }
+      ]
+    },
+    {
+      "document_ref": "guide-text-doc",
+      "attachment_ref": "guide-text",
+      "document_kind": "attachment_text",
+      "source_label": "attachment-text",
+      "canonical_text": "제출서류: 장학금지원서, 통장사본",
+      "blocks": [
+        {
+          "block_id": "attachment-block-1",
+          "text": "제출서류: 장학금지원서, 통장사본",
+          "page_number": 2
+        }
+      ]
+    }
+  ],
+  "expected": {
+    "scholarship_name": "새솔장학금",
+    "qualification": {
+      "gpa_min": 3.4,
+      "income_bracket_max": 6,
+      "grade_levels": [4],
+      "enrollment_status": ["재학생"],
+      "required_documents": ["장학금지원서", "통장사본"]
+    },
+    "evidence_block_ids": [
+      "notice-block-1",
+      "notice-block-2",
+      "notice-block-3",
+      "notice-block-4",
+      "attachment-block-1"
+    ]
+  },
+  "provider_case": {
+    "behavior": "transport_error"
+  }
+}
