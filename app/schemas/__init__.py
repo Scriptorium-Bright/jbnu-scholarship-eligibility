@@ -21,11 +21,15 @@ from app.schemas.llm_extraction import (
     LLMExtractionResponse,
 )
 from app.schemas.rag import (
+    GroundedAnswerOutput,
     RagPromptContext,
     RagRetrievalCandidate,
     RagRetrievalResult,
     RagRetrievedChunk,
+    ScholarshipRagAnswerResponse,
+    ScholarshipRagCitationResponse,
     ScholarshipRagChunkUpsert,
+    ScholarshipRagQuestionRequest,
 )
 from app.schemas.search import (
     OpenScholarshipListResponse,
@@ -39,6 +43,7 @@ __all__ = [
     "CanonicalDocumentUpsert",
     "EligibilityCheckRequest",
     "EligibilityConditionCheck",
+    "GroundedAnswerOutput",
     "LLMExtractionEvidence",
     "LLMExtractionQualification",
     "LLMExtractionResponse",
@@ -52,7 +57,10 @@ __all__ = [
     "ScholarshipEligibilityItem",
     "ScholarshipEligibilityResponse",
     "ScholarshipProvenanceAnchorResponse",
+    "ScholarshipRagAnswerResponse",
+    "ScholarshipRagCitationResponse",
     "ScholarshipRagChunkUpsert",
+    "ScholarshipRagQuestionRequest",
     "ScholarshipNoticeUpsert",
     "ScholarshipRuleCreate",
     "ScholarshipSearchItem",

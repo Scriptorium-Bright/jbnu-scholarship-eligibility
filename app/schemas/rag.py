@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import Field
 
@@ -90,3 +90,51 @@ class RagPromptContext(StrictSchema):
     selected_chunks: List[RagRetrievedChunk] = Field(default_factory=list)
     truncated: bool
     has_evidence: bool
+
+
+class GroundedAnswerOutput(StrictSchema):
+    """LLM answer provider가 반환하는 최소 답변 payload입니다."""
+
+    answer_text: str = Field(min_length=1)
+
+
+class ScholarshipRagQuestionRequest(StrictSchema):
+    """RAG 질의응답 endpoint가 입력받는 질문 payload입니다."""
+
+    question: str = Field(min_length=1)
+    limit: int = Field(default=5, ge=1, le=10)
+
+
+class ScholarshipRagCitationResponse(StrictSchema):
+    """grounded answer와 함께 노출할 citation 응답 DTO입니다."""
+
+    chunk_id: int
+    chunk_key: str
+    notice_id: int
+    document_id: int
+    rule_id: Optional[int] = None
+    block_id: str
+    quote_text: str
+    scholarship_name: Optional[str] = None
+    source_label: str
+    document_kind: DocumentKind
+    page_number: Optional[int] = None
+    anchor_keys: List[str] = Field(default_factory=list)
+    matched_retrieval_kinds: List[str] = Field(default_factory=list)
+    final_score: float = 0.0
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+
+class ScholarshipRagAnswerResponse(StrictSchema):
+    """question/answer API가 반환하는 grounded answer 응답 DTO입니다."""
+
+    question: str
+    answer_text: str
+    answer_mode: Literal["grounded", "no_evidence", "guardrail"]
+    has_evidence: bool
+    retrieval_mode: str
+    prompt_truncated: bool = False
+    keyword_fallback_used: bool = False
+    failure_reason: Optional[str] = None
+    recommended_endpoint: Optional[str] = None
+    citations: List[ScholarshipRagCitationResponse] = Field(default_factory=list)

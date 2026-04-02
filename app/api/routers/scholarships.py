@@ -4,9 +4,15 @@ from app.schemas import (
     EligibilityCheckRequest,
     OpenScholarshipListResponse,
     ScholarshipEligibilityResponse,
+    ScholarshipRagAnswerResponse,
+    ScholarshipRagQuestionRequest,
     ScholarshipSearchResponse,
 )
-from app.services import ScholarshipEligibilityService, ScholarshipSearchService
+from app.services import (
+    ScholarshipEligibilityService,
+    ScholarshipRagAnswerService,
+    ScholarshipSearchService,
+)
 
 router = APIRouter(prefix="/scholarships", tags=["scholarships"])
 
@@ -51,3 +57,15 @@ def check_scholarship_eligibility(
         query=payload.query,
         limit=payload.limit,
     )
+
+
+@router.post("/ask", response_model=ScholarshipRagAnswerResponse)
+def ask_scholarship_question(
+    payload: ScholarshipRagQuestionRequest,
+) -> ScholarshipRagAnswerResponse:
+    """
+    자연어 질문에 대해 grounded answer와 citation 목록을 반환합니다.
+    최종 eligibility 판정 질문은 deterministic eligibility endpoint로 안내합니다.
+    """
+
+    return ScholarshipRagAnswerService().answer(payload.question, limit=payload.limit)
