@@ -1,0 +1,10 @@
+{
+  "sample_id": "gamma-no-evidence-refusal",
+  "question": "기숙사 입주 가능해?",
+  "query_embedding": [0.0, 0.0, 0.0],
+  "expected": {
+    "answer_mode": "no_evidence",
+    "citation_block_ids": [],
+    "grounded_phrases": []
+  }
+}

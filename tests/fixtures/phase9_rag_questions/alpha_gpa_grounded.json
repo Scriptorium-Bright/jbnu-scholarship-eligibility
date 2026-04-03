@@ -1,0 +1,13 @@
+{
+  "sample_id": "alpha-gpa-grounded",
+  "question": "통합장학금 성적 기준이 뭐야?",
+  "query_embedding": [1.0, 0.0, 0.0],
+  "answer_payload": {
+    "answer_text": "통합장학금은 직전학기 평점평균 3.80 이상인 재학생을 대상으로 합니다."
+  },
+  "expected": {
+    "answer_mode": "grounded",
+    "citation_block_ids": ["notice-block-1"],
+    "grounded_phrases": ["직전학기 평점평균 3.80 이상인 재학생"]
+  }
+}

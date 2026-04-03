@@ -13,6 +13,11 @@ from app.schemas import RagRetrievalCandidate, RagRetrievalResult, RagRetrievedC
 class ScholarshipRagRetrievalService:
     """query 시점 hybrid retrieval, dedup, diversity selection을 담당하는 서비스입니다."""
 
+    """
+    diversity selection은 단순히 점수 상위 근거만 뽑는 것이 아니라,
+    같은 문서에 과하게 몰리지 않도록 후보를 분산시켜 citation 다양성을 확보하는 전략입니다.
+    """
+
     def __init__(
         self,
         *,

@@ -1,0 +1,11 @@
+{
+  "sample_id": "delta-guardrail-refusal",
+  "question": "제 학점 3.8과 소득분위 6이면 지원 가능해?",
+  "query_embedding": [1.0, 0.0, 0.0],
+  "expected": {
+    "answer_mode": "guardrail",
+    "citation_block_ids": [],
+    "grounded_phrases": [],
+    "recommended_endpoint": "/api/v1/scholarships/eligibility"
+  }
+}

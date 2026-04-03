@@ -1,0 +1,13 @@
+{
+  "sample_id": "beta-documents-grounded",
+  "question": "통합장학금 제출서류는 뭐야?",
+  "query_embedding": [0.0, 0.0, 1.0],
+  "answer_payload": {
+    "answer_text": "통합장학금 제출서류는 장학금지원서 및 성적증명서입니다."
+  },
+  "expected": {
+    "answer_mode": "grounded",
+    "citation_block_ids": ["attachment-block-1"],
+    "grounded_phrases": ["장학금지원서", "성적증명서"]
+  }
+}
