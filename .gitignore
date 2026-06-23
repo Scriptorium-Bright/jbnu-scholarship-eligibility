@@ -16,3 +16,9 @@ docs/
 gs/
 
 alembic.ini.bak
+
+# IDE
+.idea/
+
+# agent config
+AGENTS.md
