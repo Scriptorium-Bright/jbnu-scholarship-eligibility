@@ -258,6 +258,12 @@ pytest
 - 추출과 질문 응답 평가는 현재 사전 정의한 테스트 데이터와 fake provider 기준입니다.
 - 지원 조건 스키마는 현재 핵심 필드 중심입니다.
 
+## 고도화와 배포 준비
+
+추가 기능, ETL 운영화, RAG 품질 개선, 배포 체크리스트는 [improvement.md](improvement.md)에 정리했습니다.
+
+OCI 배포 계획은 [deployment-oci.md](deployment-oci.md)에 정리했습니다.
+
 ## 앞으로 더 확장할 수 있는 방향
 
 - 질문 유형을 먼저 분기하는 오케스트레이션 계층 추가
